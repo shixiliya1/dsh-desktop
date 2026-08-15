@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSH Desktop</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <div class="logo" aria-hidden="true">
+        <span class="logo-glyph">&gt;</span><span class="logo-caret"></span>
+      </div>
+
+      <h1 class="title">DeepSeek Harness <em>Desktop</em></h1>
+
+      <div class="status-row">
+        <span id="status-dot" class="dot dot-idle"></span>
+        <span id="status-text" class="status-text">正在初始化…</span>
+      </div>
+
+      <p id="status-detail" class="detail"></p>
+
+      <pre id="log-box" class="log" aria-label="Harness 日志"></pre>
+
+      <div class="actions">
+        <button id="btn-restart" type="button" class="btn btn-primary">重启 Harness</button>
+        <button id="btn-log" type="button" class="btn">打开日志</button>
+        <button id="btn-data" type="button" class="btn">数据目录</button>
+        <button id="btn-browser" type="button" class="btn">在浏览器中打开</button>
+        <button id="btn-quit" type="button" class="btn btn-danger">退出</button>
+      </div>
+
+      <p id="meta" class="meta"></p>
+    </section>
+  </main>
+  <script src="renderer.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+{
+  "name": "dsh-desktop",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness 桌面端：自动启动本地 Harness 实例并在原生窗口中加载其 Web UI",
+  "main": "src/main/index.js",
+  "private": true,
+  "author": "dsh-desktop contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "smoke": "electron . --smoke",
+    "icons": "node scripts/generate-icon.js",
+    "postinstall": "node scripts/generate-icon.js",
+    "dist": "node scripts/generate-icon.js && electron-builder",
+    "dist:dir": "node scripts/generate-icon.js && electron-builder --dir",
+    "dist:win": "node scripts/generate-icon.js && electron-builder --win",
+    "dist:mac": "node scripts/generate-icon.js && electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "io.dsh.desktop",
+    "productName": "DSH Desktop",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "artifactName": "dsh-desktop-${os}-${arch}.${ext}",
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "dsh-desktop-${os}-setup-${arch}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DSH Desktop"
+    },
+    "portable": {
+      "artifactName": "dsh-desktop-${os}-portable-${arch}.${ext}"
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,230 @@
+:root {
+  --bg: #0b1020;
+  --card: #121a33;
+  --card-border: #1f2a4d;
+  --text: #e6ecff;
+  --text-dim: #8b96b8;
+  --accent: #5b7cff;
+  --accent-2: #7b9bff;
+  --danger: #ff5f6d;
+  --ok: #3ddc97;
+  --warn: #ffc45c;
+  --log-bg: #0a0e1c;
+  --log-border: #1c2544;
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(91, 124, 255, 0.14), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.page {
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 36px 32px 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ---- CSS 绘制的 logo ---- */
+.logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--accent-2) 0%, var(--accent) 45%, #3347c4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 10px 30px rgba(91, 124, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.logo-glyph {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  transform: translateX(-3px);
+}
+
+.logo-caret {
+  width: 10px;
+  height: 26px;
+  background: #fff;
+  border-radius: 3px;
+  animation: blink 1.1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---- 标题 ---- */
+.title {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.title em {
+  font-style: normal;
+  background: linear-gradient(90deg, var(--accent-2), #a7b8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- 状态 ---- */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dot-idle { background: var(--text-dim); }
+.dot-starting { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
+.dot-ready { background: var(--ok); }
+.dot-failed { background: var(--danger); }
+.dot-stopped { background: var(--text-dim); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+.status-text {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.detail {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  text-align: center;
+  min-height: 16px;
+  word-break: break-all;
+}
+
+/* ---- 日志 ---- */
+.log {
+  width: 100%;
+  height: 200px;
+  overflow: auto;
+  background: var(--log-bg);
+  border: 1px solid var(--log-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #9fb0d8;
+  user-select: text;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log:empty::before {
+  content: "（暂无日志）";
+  color: #4c5780;
+}
+
+/* ---- 按钮 ---- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--card-border);
+  background: #182244;
+  color: var(--text);
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+
+.btn:hover {
+  background: #1f2b55;
+  border-color: #2c3b6e;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: linear-gradient(145deg, var(--accent-2), var(--accent));
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(145deg, #8aa7ff, #6c8bff);
+}
+
+.btn-danger {
+  color: #ffb3ba;
+  border-color: #5c2730;
+  background: #2a1520;
+}
+
+.btn-danger:hover {
+  background: #3a1a28;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.meta {
+  font-size: 11px;
+  color: #4c5780;
+  word-break: break-all;
+  text-align: center;
+  max-width: 100%;
+}
