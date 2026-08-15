@@ -1,5 +1,7 @@
 # DSH Desktop
 
+**简体中文** · [English](README.en.md) · [日本語](README.ja.md)
+
 DeepSeek Harness 的桌面端（Electron 外壳）。自动启动本地 Harness 实例，在原生窗口中加载其 Web UI，附带托盘常驻、随机端口、日志管理、进程生命周期管理与安全加固。
 
 本项目参考了两个社区方案的设计：
@@ -51,7 +53,7 @@ DSH Desktop (Electron Main)
 ├── 托盘 / 应用菜单 / IPC
 └── 单实例锁
 
-%APPDATA%\dsh-desktop\
+Electron 用户数据目录（Windows 打包版通常为 `%APPDATA%\DSH Desktop`）/
 ├── harness\          # DSH_HOME：profiles / sessions / 插件等
 ├── logs\harness.log
 └── npm-cache\        # npx 下载缓存，二次启动无需重新下载
@@ -91,7 +93,6 @@ npm run smoke       # 端到端：真实拉起 Harness 子进程并等待就绪
 - **启动失败**：状态页点「打开日志」查看 `logs\harness.log`；或在托盘菜单「重启 Harness」重试（会自动换端口）。
 - **单实例与托盘**：应用是单实例的，重复启动只会聚焦已有窗口；关闭窗口是隐藏到托盘，请用托盘菜单「退出」真正结束。用任务管理器强杀主进程会遗留 Harness 子进程（占用随机端口），可手动清理或下次启动前用「重启 Harness」。
 - **杀毒软件拦截**：`cmd.exe` 通过 `npx` 下载并执行 npm 包属于正常行为，如被拦截请添加白名单。
-- **想用固定端口**：设置 `DSH_DESKTOP_DSH_CMD=npx -y @deepseek-ai/dsh --profile web --port __PORT__` 并自行固定端口（不推荐，随机端口是本应用的设计选择）。
 
 ## 安全设计
 
@@ -100,6 +101,8 @@ npm run smoke       # 端到端：真实拉起 Harness 子进程并等待就绪
 - 子进程边界：Harness 子进程通过 `npx` 以独立环境启动（独立 `DSH_HOME`、独立 npm 缓存），与主进程/渲染进程隔离
 - CSP：状态页声明严格 CSP（`default-src 'self'`）
 
+`DSH_DESKTOP_DSH_CMD` 会交给系统 shell 执行，只应使用可信内容。发现安全问题时，请遵循 [安全政策](SECURITY.md)，不要在公开 Issue 中披露漏洞细节。
+
 ## Roadmap
 
 - [ ] 模型供应商一键配置（借鉴 dataelement 的 onboarding 思路）
@@ -107,6 +110,10 @@ npm run smoke       # 端到端：真实拉起 Harness 子进程并等待就绪
 - [ ] 自动更新（electron-updater）
 - [ ] macOS 打包实测与签名/公证
 
+## 参与贡献
+
+提交代码或文档前，请阅读 [贡献指南](CONTRIBUTING.md) 和 [社区行为准则](CODE_OF_CONDUCT.md)。
+
 ## License
 
-MIT。DeepSeek Harness 及其依赖遵循各自上游许可证。
+本项目采用 [MIT License](LICENSE)。DeepSeek Harness 及其依赖遵循各自上游许可证。
