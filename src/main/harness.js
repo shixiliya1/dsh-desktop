@@ -1,7 +1,7 @@
 'use strict'
 
 // HarnessManager: 负责 DeepSeek Harness 子进程的完整生命周期——
-// 启动（npx 或自定义命令）、随机端口、就绪探测、日志采集、树级终止。
+// 启动（固定 Harness 或自定义命令）、随机端口、就绪探测、日志采集、树级终止。
 
 const { spawn, execFile } = require('node:child_process')
 const http = require('node:http')
@@ -11,7 +11,7 @@ const crypto = require('node:crypto')
 
 const PORT_MIN = 30000
 const PORT_MAX = 50000
-const FIRST_READY_TIMEOUT_MS = 5 * 60 * 1000 // 首次启动可能需 npx 下载 dsh
+const FIRST_READY_TIMEOUT_MS = 90 * 1000
 const RETRY_READY_TIMEOUT_MS = 90 * 1000 // 重试端口时缩短等待
 const MAX_PORT_ATTEMPTS = 3
 const POLL_INTERVAL_MS = 400
@@ -89,7 +89,20 @@ class HarnessManager {
     if (override && override.trim()) {
       return override.replace(/__PORT__/g, String(port))
     }
-    return `npx -y @deepseek-ai/dsh --profile web --port ${port}`
+    const entry = path.join(
+      __dirname,
+      '..',
+      '..',
+      'node_modules',
+      '@deepseek-ai',
+      'dsh',
+      'lib',
+      'bin.js'
+    )
+    if (!fs.existsSync(entry)) {
+      throw new Error('固定的 DeepSeek Harness 运行时缺失，请重新安装 DSH Desktop。')
+    }
+    return `"${process.execPath}" "${entry}" --profile web --port ${port}`
   }
 
   spawnChild(port) {
@@ -97,7 +110,8 @@ class HarnessManager {
     const env = {
       ...process.env,
       DSH_HOME: this.dshHome,
-      npm_config_cache: this.npmCacheDir
+      npm_config_cache: this.npmCacheDir,
+      ELECTRON_RUN_AS_NODE: '1'
     }
     this.logLine(`[dsh-desktop] launching: ${commandLine}`)
     this.logLine(`[dsh-desktop] DSH_HOME=${this.dshHome}`)

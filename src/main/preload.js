@@ -17,7 +17,15 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   quit: () => ipcRenderer.invoke('dsh:quit'),
   openLog: () => ipcRenderer.invoke('dsh:open-log'),
   openData: () => ipcRenderer.invoke('dsh:open-data'),
+  openPresets: () => ipcRenderer.invoke('dsh:open-presets'),
+  exportPresets: () => ipcRenderer.invoke('dsh:export-presets'),
+  importPresets: () => ipcRenderer.invoke('dsh:import-presets'),
   openExternal: (url) => ipcRenderer.invoke('dsh:open-external', url),
+  getUpdateState: () => ipcRenderer.invoke('dsh:update-state'),
+  checkUpdate: () => ipcRenderer.invoke('dsh:check-update'),
+  installUpdate: () => ipcRenderer.invoke('dsh:install-update'),
+  onUpdate: (callback) => subscribe('dsh:update', callback),
+  onPresetsMessage: (callback) => subscribe('dsh:presets-message', callback),
   onState: (callback) => subscribe('dsh:state', callback),
   onLog: (callback) => subscribe('dsh:log', callback)
 })

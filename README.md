@@ -2,7 +2,7 @@
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md)
 
-DeepSeek Harness 的桌面端（Electron 外壳）。自动启动本地 Harness 实例，在原生窗口中加载其 Web UI，附带托盘常驻、随机端口、日志管理、进程生命周期管理与安全加固。
+DeepSeek Harness 的桌面端（Electron 外壳）。内置 Harness 运行时，自动启动本地 Harness 实例，在原生窗口中加载其 Web UI，附带托盘常驻、随机端口、日志管理、预设导入/导出、自动更新与安全加固。
 
 本项目参考了两个社区方案的设计：
 
@@ -15,16 +15,19 @@ DeepSeek Harness 的桌面端（Electron 外壳）。自动启动本地 Harness 
 
 - **一键启动**：无需手动开终端；应用负责启动/重启/停止 Harness 子进程
 - **随机端口**：每次启动在 `127.0.0.1` 上随机选端口（30000–50000），不占用固定端口，失败自动换端口重试
+- **内置 Harness**：应用自带 `@deepseek-ai/dsh` 运行时，打包版无需系统 Node 或 npx，首次启动不再联网下载
 - **数据隔离**：Harness 的 `DSH_HOME` 指向应用数据目录（`%APPDATA%\dsh-desktop\harness`），与命令行/Web 版实例互不干扰，升级应用不丢数据
-- **托盘常驻**：关闭窗口最小化到托盘；托盘菜单可显示/隐藏、重启 Harness、打开日志/数据目录、退出
-- **状态页**：启动过程实时显示状态与日志（首次启动会显示 npx 下载进度）；失败可重试
+- **预设导入/导出**：Agent 预设保存在 `<DSH_HOME>\.agent-presets\<id>\` 下，可一键打包导出为 zip，也可从 zip 导入（不覆盖已有预设）
+- **自动更新**：Windows 安装版从 GitHub Releases 自动检查并下载更新；应用菜单「检查更新」可手动触发
+- **托盘常驻**：关闭窗口最小化到托盘；托盘菜单可显示/隐藏、重启 Harness、打开日志/数据目录、导出/导入预设、退出
+- **状态页**：启动过程实时显示状态与日志；失败可重试
 - **日志管理**：子进程 stdout/stderr 追加写入 `logs/harness.log`，可一键打开
 - **安全加固**：`contextIsolation` + `sandbox` + 无 `nodeIntegration`；外部链接一律交给系统浏览器，禁止导航离开 Harness 页面；子进程不继承渲染进程权限
 - **单实例**：重复启动只会聚焦已有窗口
 
 ## 快速开始
 
-要求：Node.js `>= 22.12`（运行时需要；应用本身不打包 Node）。
+开发环境要求 Node.js `>= 22.12`；打包版内置 Harness 运行时，不依赖系统 Node/npx。
 
 ```bash
 npm install        # 安装 electron 等依赖，并生成图标
@@ -43,7 +46,7 @@ npx electron . --shot shots   # 依次截取状态页与 Harness 页面到 shots
 ```text
 DSH Desktop (Electron Main)
 ├── HarnessManager
-│   ├── npx -y @deepseek-ai/dsh --profile web --port <random>
+│   ├── Electron Node 模式启动内置 @deepseek-ai/dsh@0.1.0-rc.6
 │   ├── 就绪探测（轮询 http://127.0.0.1:<port>/）
 │   ├── 日志 → %APPDATA%\DSH Desktop\logs\harness.log
 │   └── taskkill /T /F 整树终止
@@ -55,8 +58,8 @@ DSH Desktop (Electron Main)
 
 Electron 用户数据目录（Windows 打包版通常为 `%APPDATA%\DSH Desktop`）/
 ├── harness\          # DSH_HOME：profiles / sessions / 插件等
+│   └── .agent-presets\   # Agent 预设（可导入/导出）
 ├── logs\harness.log
-└── npm-cache\        # npx 下载缓存，二次启动无需重新下载
 ```
 
 ## 配置
@@ -68,7 +71,9 @@ Electron 用户数据目录（Windows 打包版通常为 `%APPDATA%\DSH Desktop`
 | `DSH_DESKTOP_DSH_CMD` | 自定义启动命令；其中的 `__PORT__` 会被替换为实际端口。例如 `node C:\path\to\dsh\bin\dsh.js web --port __PORT__` |
 | `DSH_DESKTOP_DSH_HOME` | 覆盖 Harness 数据目录（默认 `%APPDATA%\dsh-desktop\harness`）。设为你现有的 `~/.dsh` 即可与命令行实例共享数据（注意：与正在运行的实例共用同一 `DSH_HOME` 有风险，一般不建议） |
 
-模型 API Key 等配置在 Harness 的 **Settings → Models** 里完成，与 Web 版完全一致。
+模型 API Key 在 Harness 的 **Settings → Models** 里配置，与 Web 版完全一致；模型供应商由 Harness 内置目录支持，桌面端无需单独维护名单。
+
+Agent 预设位于 `<DSH_HOME>\.agent-presets\`，可通过应用/托盘菜单「打开预设目录」直达，或使用「导出预设… / 导入预设…」打包与恢复（仅接受 `<id>/agent.cordis.yml` 与 `<id>/preset.yml`，不会覆盖已有预设）。
 
 ## 打包发布
 
@@ -80,6 +85,8 @@ npm run dist:dir    # 仅解包目录（dist\win-unpacked），用于快速验�
 
 图标由 `scripts/generate-icon.js` 纯 Node 生成（PNG/ICO/ICNS，无第三方依赖），`postinstall` 自动执行。
 
+推送 `v*` tag 或手动运行 GitHub Actions（`.github/workflows/release.yml`）即可在 Windows 上构建 NSIS/便携版并上传到 GitHub Releases；安装版会自动检查更新。
+
 ## 验证
 
 ```bash
@@ -89,25 +96,25 @@ npm run smoke       # 端到端：真实拉起 Harness 子进程并等待就绪
 
 ## 故障排查
 
-- **首次启动慢**：`npx` 需要下载 `@deepseek-ai/dsh`（缓存在 `%APPDATA%\dsh-desktop\npm-cache`），状态页会实时显示进度；完成后即快。
+- **首次启动慢**：开发模式下 `npm install` 已安装内置 Harness；打包版启动无需联网下载。若仍启动缓慢，请查看 `logs\harness.log`。
 - **启动失败**：状态页点「打开日志」查看 `logs\harness.log`；或在托盘菜单「重启 Harness」重试（会自动换端口）。
 - **单实例与托盘**：应用是单实例的，重复启动只会聚焦已有窗口；关闭窗口是隐藏到托盘，请用托盘菜单「退出」真正结束。用任务管理器强杀主进程会遗留 Harness 子进程（占用随机端口），可手动清理或下次启动前用「重启 Harness」。
-- **杀毒软件拦截**：`cmd.exe` 通过 `npx` 下载并执行 npm 包属于正常行为，如被拦截请添加白名单。
+- **杀毒软件拦截**：应用通过 `cmd.exe` 启动内置 Harness 子进程属正常行为，如被拦截请添加白名单。
 
 ## 安全设计
 
 - 渲染进程：`sandbox: true`、`contextIsolation: true`、`nodeIntegration: false`，仅暴露最小化 preload API
 - 导航边界：`will-navigate` 只允许 Harness 自身 origin 与本地状态页；`setWindowOpenHandler` 一律拒绝新窗口，http(s) 转系统浏览器
-- 子进程边界：Harness 子进程通过 `npx` 以独立环境启动（独立 `DSH_HOME`、独立 npm 缓存），与主进程/渲染进程隔离
+- 子进程边界：Harness 子进程以独立的 `DSH_HOME` 与 npm 缓存启动，与主进程/渲染进程隔离
 - CSP：状态页声明严格 CSP（`default-src 'self'`）
 
 `DSH_DESKTOP_DSH_CMD` 会交给系统 shell 执行，只应使用可信内容。发现安全问题时，请遵循 [安全政策](SECURITY.md)，不要在公开 Issue 中披露漏洞细节。
 
 ## Roadmap
 
-- [ ] 模型供应商一键配置（借鉴 dataelement 的 onboarding 思路）
-- [ ] 自定义 Agent 预设的导入/导出
-- [ ] 自动更新（electron-updater）
+- [x] 模型供应商 onboarding 引导（使用 Harness 的 Settings → Models）
+- [x] 自定义 Agent 预设的导入/导出
+- [x] 自动更新（electron-updater，Windows 安装版）
 - [ ] macOS 打包实测与签名/公证
 
 ## 参与贡献

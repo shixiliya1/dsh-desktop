@@ -20,6 +20,10 @@
     "dist:win": "node scripts/generate-icon.js && electron-builder --win",
     "dist:mac": "node scripts/generate-icon.js && electron-builder --mac"
   },
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.0-rc.6",
+    "electron-updater": "^6.8.9"
+  },
   "devDependencies": {
     "electron": "^43.4.0",
     "electron-builder": "^26.15.3"
@@ -27,14 +31,14 @@
   "build": {
     "appId": "io.dsh.desktop",
     "productName": "DSH Desktop",
+    "npmRebuild": false,
     "directories": {
       "output": "dist",
       "buildResources": "build"
     },
-    "files": [
-      "src/**/*",
-      "package.json"
-    ],
+    "asar": false,
+    "files": ["src/**/*", "node_modules/**/*", "package.json"],
+    "publish": [{"provider": "github", "owner": "shixiliya1", "repo": "dsh-desktop"}],
     "extraResources": [
       {
         "from": "build/icon.png",

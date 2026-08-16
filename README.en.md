@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · **English** · [日本語](README.ja.md)
 
-DSH Desktop is an Electron shell for DeepSeek Harness. It starts a local Harness instance, loads its Web UI in a native window, and provides tray integration, random loopback ports, logs, process lifecycle management, and hardened window defaults.
+DSH Desktop is an Electron shell for DeepSeek Harness. It bundles the pinned `@deepseek-ai/dsh@0.1.0-rc.6` runtime, starts it locally, loads its Web UI in a native window, and provides tray integration, random loopback ports, logs, process lifecycle management, and hardened window defaults.
 
 The project draws on ideas from [OptLTD/dsh-desktop](https://github.com/OptLTD/dsh-desktop) (a lightweight Wails wrapper and application-local npm cache) and [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) (Electron process management, readiness checks, isolated data, and BrowserWindow hardening).
 
@@ -10,7 +10,10 @@ The project draws on ideas from [OptLTD/dsh-desktop](https://github.com/OptLTD/d
 
 - One-click start, restart, and stop for the Harness child process
 - A random port from 30000–50000 on `127.0.0.1`, with up to three startup attempts
-- An isolated `DSH_HOME`, log directory, and npm cache under Electron's user-data directory
+- An isolated `DSH_HOME` and log directory under Electron's user-data directory
+- Harness's built-in Models settings for provider onboarding, credentials, and model catalogs
+- Safe custom Agent preset package import/export from the tray or startup page
+- GitHub Releases update checks in Windows NSIS installations
 - System-tray controls for the window, Harness, logs, data directory, and application exit
 - A local startup page with live state and log output
 - `sandbox: true`, `contextIsolation: true`, and `nodeIntegration: false`
@@ -19,23 +22,22 @@ The project draws on ideas from [OptLTD/dsh-desktop](https://github.com/OptLTD/d
 
 ## Requirements and quick start
 
-Node.js `>= 22.12` is required. The packaged application does not include a system Node.js installation for `npx`.
+Node.js `>= 22.12` is required for development. The packaged application includes the pinned Harness runtime and does not download it with `npx`.
 
 ```bash
 npm install
 npm start
 ```
 
-On first launch, `npx` may need time to download `@deepseek-ai/dsh`. Later launches reuse the application-local npm cache.
+The development install fetches the pinned Harness package through npm. At runtime the desktop app launches that installed package directly through Electron's Node mode.
 
 ## Data and configuration
 
 The application stores the following under Electron's user-data directory (normally `%APPDATA%\DSH Desktop` in a packaged Windows build):
 
 ```text
-harness/          # DSH_HOME: profiles, sessions, plugins, and related data
+harness/          # DSH_HOME: profiles, sessions, plugins, and .agent-presets
 logs/harness.log
-npm-cache/        # npx download cache
 ```
 
 Use the application menu or tray menu to open the authoritative data and log locations.
@@ -46,6 +48,10 @@ Use the application menu or tray menu to open the authoritative data and log loc
 | `DSH_DESKTOP_DSH_HOME` | Overrides the Harness data directory. Do not let two running instances share the same directory |
 
 Configure model API keys in **Settings → Models** inside Harness. Never commit credentials to this repository.
+
+The Models page is the provider onboarding surface: choose a provider, enter its credential in the protected credential flow, and add or discover models. The desktop wrapper does not maintain a second provider catalog, so the setup stays compatible with the upstream Harness schema.
+
+Custom presets are stored under `harness/.agent-presets/`. Use **Export presets** to create a `.dshpreset` package and **Import presets** to preview and confirm a package before installation. Existing preset IDs are never overwritten.
 
 ## Development and verification
 
@@ -58,7 +64,7 @@ node --check scripts/generate-icon.js
 npm run smoke
 ```
 
-`npm run smoke` launches a real Harness process, waits for the local service, and exits. It may download `@deepseek-ai/dsh` on its first run. To capture the startup and Harness pages, run `npx electron . --shot shots`.
+`npm run smoke` launches a real Harness process, waits for the local service, and exits. Run `npx electron . --shot shots` to capture the startup and Harness pages.
 
 ## Packaging
 
@@ -75,7 +81,7 @@ macOS signing, notarization, and device testing are still pending. Icons are gen
 - If startup fails, open `logs/harness.log` from the status page or tray and try **Restart Harness**.
 - Closing the window hides it to the tray. Use **Quit** from the tray to stop the app completely.
 - Force-killing Electron may leave a Harness child process behind; end it manually if necessary.
-- Antivirus software may flag the system-shell invocation of `npx`. Verify the package name and logs before allowing it.
+- Antivirus software may flag the Electron child-process launch. Verify the signed installer and logs before allowing it.
 
 ## Security
 
@@ -85,9 +91,9 @@ The renderer is sandboxed and has no Node integration. The preload exposes only 
 
 ## Roadmap
 
-- [ ] One-click model-provider setup
-- [ ] Import and export custom Agent presets
-- [ ] Automatic updates with electron-updater
+- [x] Model-provider onboarding through Harness's Models settings
+- [x] Import and export custom Agent presets
+- [x] Automatic updates with electron-updater (Windows NSIS)
 - [ ] Tested macOS packaging, signing, and notarization
 
 ## Contributing and license

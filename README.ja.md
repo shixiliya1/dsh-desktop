@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md) · **日本語**
 
-DSH Desktop は DeepSeek Harness 用の Electron シェルです。ローカルの Harness インスタンスを自動起動し、Web UI をネイティブウィンドウ内に表示します。システムトレイ、ランダムなループバックポート、ログ、プロセスのライフサイクル管理、安全性を高めたウィンドウ設定を備えています。
+DSH Desktop は DeepSeek Harness 用の Electron シェルです。固定した `@deepseek-ai/dsh@0.1.0-rc.6` をアプリに同梱し、ローカルで起動して Web UI をネイティブウィンドウ内に表示します。システムトレイ、ランダムなループバックポート、ログ、プロセス管理、安全性を高めたウィンドウ設定を備えています。
 
 設計では、[OptLTD/dsh-desktop](https://github.com/OptLTD/dsh-desktop) の軽量な Wails ラッパーとアプリ専用 npm キャッシュ、および [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) の Electron プロセス管理、起動確認、データ分離、BrowserWindow の保護を参考にしています。
 
@@ -10,7 +10,10 @@ DSH Desktop は DeepSeek Harness 用の Electron シェルです。ローカル�
 
 - Harness 子プロセスの起動・再起動・停止をワンクリックで管理
 - `127.0.0.1` の 30000〜50000 からランダムにポートを選択し、最大 3 回まで起動を試行
-- Electron のユーザーデータディレクトリ内に `DSH_HOME`、ログ、npm キャッシュを分離
+- Electron のユーザーデータディレクトリ内に `DSH_HOME` とログを分離
+- Harness の Models 設定によるモデルプロバイダー、認証情報、モデル一覧の初期設定
+- カスタム Agent プリセットの安全なインポート／エクスポート
+- Windows NSIS インストーラー向け GitHub Releases 自動更新
 - ウィンドウ、Harness、ログ、データディレクトリ、アプリ終了を操作できるシステムトレイ
 - 状態とログをリアルタイム表示するローカル起動ページ
 - `sandbox: true`、`contextIsolation: true`、`nodeIntegration: false`
@@ -19,23 +22,22 @@ DSH Desktop は DeepSeek Harness 用の Electron シェルです。ローカル�
 
 ## 必要環境とクイックスタート
 
-Node.js `>= 22.12` が必要です。パッケージ版アプリには、`npx` が利用するシステム Node.js は含まれていません。
+開発には Node.js `>= 22.12` が必要です。パッケージ版には固定した Harness ランタイムが含まれ、実行時に `npx` でダウンロードすることはありません。
 
 ```bash
 npm install
 npm start
 ```
 
-初回起動時は `npx` が `@deepseek-ai/dsh` をダウンロードするため、時間がかかる場合があります。次回以降はアプリ専用の npm キャッシュを再利用します。
+開発時の `npm install` で固定バージョンを取得します。実行時は Electron の Node モードからインストール済みランタイムを直接起動します。
 
 ## データと設定
 
 次のデータは Electron のユーザーデータディレクトリ（Windows のパッケージ版では通常 `%APPDATA%\DSH Desktop`）に保存されます。
 
 ```text
-harness/          # DSH_HOME：profiles、sessions、プラグインなど
+harness/          # DSH_HOME：profiles、sessions、プラグイン、.agent-presets
 logs/harness.log
-npm-cache/        # npx ダウンロードキャッシュ
 ```
 
 正確な場所はアプリまたはトレイメニューからデータ／ログフォルダーを開いて確認してください。
@@ -46,6 +48,10 @@ npm-cache/        # npx ダウンロードキャッシュ
 | `DSH_DESKTOP_DSH_HOME` | Harness のデータディレクトリを変更します。実行中の複数インスタンスで同じディレクトリを共有しないでください |
 
 モデルの API キーは Harness の **Settings → Models** で設定します。認証情報をこのリポジトリへコミットしないでください。
+
+Models 画面がプロバイダー設定の入口です。プロバイダーを選択し、認証情報を保護された入力欄から登録してモデルを追加または検出してください。デスクトップ側で別のプロバイダー一覧を持たないため、Harness の設定形式と互換性があります。
+
+カスタムプリセットは `harness/.agent-presets/` に保存されます。**プリセットをエクスポート** で `.dshpreset` パッケージを作成し、**プリセットをインポート** で内容を確認してから確定します。既存の ID は上書きされません。
 
 ## 開発と検証
 
@@ -58,7 +64,7 @@ node --check scripts/generate-icon.js
 npm run smoke
 ```
 
-`npm run smoke` は実際の Harness プロセスを起動し、ローカルサービスの準備完了を確認して終了します。初回は `@deepseek-ai/dsh` をダウンロードする場合があります。起動画面と Harness 画面を保存するには `npx electron . --shot shots` を実行してください。
+`npm run smoke` は実際の Harness プロセスを起動し、ローカルサービスの準備完了を確認して終了します。起動画面と Harness 画面を保存するには `npx electron . --shot shots` を実行してください。
 
 ## パッケージ作成
 
@@ -75,7 +81,7 @@ macOS の署名、公証、実機テストは今後の対応項目です。ア�
 - 起動に失敗した場合は、起動画面またはトレイから `logs/harness.log` を開き、**Harness を再起動**してください。
 - ウィンドウを閉じてもトレイに格納されるだけです。完全に停止するにはトレイの **終了** を使用してください。
 - Electron を強制終了すると Harness プロセスが残る場合があります。必要に応じて手動で終了してください。
-- ウイルス対策ソフトが `npx` のシステムシェル実行を検知する場合があります。許可する前にパッケージ名とログを確認してください。
+- ウイルス対策ソフトが Electron の子プロセス起動を検知する場合があります。許可する前に署名済みインストーラーとログを確認してください。
 
 ## セキュリティ
 
@@ -85,9 +91,9 @@ macOS の署名、公証、実機テストは今後の対応項目です。ア�
 
 ## ロードマップ
 
-- [ ] モデルプロバイダーのワンクリック設定
-- [ ] カスタム Agent プリセットのインポート／エクスポート
-- [ ] electron-updater による自動更新
+- [x] Harness の Models 画面によるモデルプロバイダー初期設定
+- [x] カスタム Agent プリセットのインポート／エクスポート
+- [x] electron-updater による自動更新（Windows NSIS）
 - [ ] macOS パッケージ、署名、公証の実機検証
 
 ## コントリビューションとライセンス

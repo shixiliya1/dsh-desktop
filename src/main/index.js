@@ -10,11 +10,14 @@ const {
   Menu,
   ipcMain,
   shell,
-  nativeImage
+  nativeImage,
+  dialog
 } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const { HarnessManager } = require('./harness')
+const { registerUpdateManager, check: checkForUpdates } = require('./updater')
+const { exportPresets, importPresets, presetRoot } = require('./presets')
 
 const SMOKE = process.argv.includes('--smoke')
 const SMOKE_TIMEOUT_MS = 5 * 60 * 1000
@@ -63,6 +66,7 @@ function iconPath() {
 }
 
 async function main() {
+  registerUpdateManager()
   manager = new HarnessManager({
     userDataDir: app.getPath('userData'),
     onState: broadcastState,
@@ -132,6 +136,33 @@ function broadcastState(state) {
 
 function broadcastLog(line) {
   if (win && !win.isDestroyed()) win.webContents.send('dsh:log', line)
+}
+
+function broadcastPresetsMessage(message) {
+  if (win && !win.isDestroyed()) win.webContents.send('dsh:presets-message', message)
+}
+
+/** 执行预设操作并返回结果；菜单入口额外弹原生结果框。 */
+async function runPresetAction(action) {
+  if (!manager) return { ok: false, message: '应用尚未初始化。' }
+  const result =
+    action === 'export'
+      ? await exportPresets(manager.dshHome)
+      : await importPresets(manager.dshHome)
+  broadcastPresetsMessage(result.message || '')
+  return result
+}
+
+async function presetMenuAction(action) {
+  const result = await runPresetAction(action)
+  if (!result.canceled) {
+    const parent = win && !win.isDestroyed() ? win : undefined
+    await dialog.showMessageBox(parent, {
+      type: result.ok ? 'info' : 'warning',
+      title: result.ok ? '预设导入/导出' : '预设操作未完成',
+      message: result.message
+    })
+  }
 }
 
 function loadHarness() {
@@ -217,6 +248,19 @@ function createTray() {
         label: '打开数据目录',
         click: () => manager && shell.openPath(manager.dshHome)
       },
+      {
+        label: '打开预设目录',
+        click: () => manager && shell.openPath(presetRoot(manager.dshHome))
+      },
+      { type: 'separator' },
+      {
+        label: '导出预设…',
+        click: () => presetMenuAction('export')
+      },
+      {
+        label: '导入预设…',
+        click: () => presetMenuAction('import')
+      },
       { type: 'separator' },
       {
         label: '退出',
@@ -251,9 +295,17 @@ function createMenu() {
           accelerator: 'CmdOrCtrl+Shift+R',
           click: () => manager && manager.restart()
         },
+        {
+          label: '检查更新',
+          click: () => checkForUpdates(true)
+        },
         { type: 'separator' },
         { label: '打开日志文件夹', click: () => manager && shell.openPath(manager.logDir) },
         { label: '打开数据目录', click: () => manager && shell.openPath(manager.dshHome) },
+        { label: '打开预设目录', click: () => manager && shell.openPath(presetRoot(manager.dshHome)) },
+        { type: 'separator' },
+        { label: '导出预设…', click: () => presetMenuAction('export') },
+        { label: '导入预设…', click: () => presetMenuAction('import') },
         { type: 'separator' },
         { role: 'quit', label: '退出' }
       ]
@@ -285,6 +337,9 @@ ipcMain.handle('dsh:quit', () => {
 })
 ipcMain.handle('dsh:open-log', () => (manager ? shell.openPath(manager.logDir) : ''))
 ipcMain.handle('dsh:open-data', () => (manager ? shell.openPath(manager.dshHome) : ''))
+ipcMain.handle('dsh:open-presets', () => (manager ? shell.openPath(presetRoot(manager.dshHome)) : ''))
+ipcMain.handle('dsh:export-presets', () => runPresetAction('export'))
+ipcMain.handle('dsh:import-presets', () => runPresetAction('import'))
 ipcMain.handle('dsh:open-external', (_event, url) => {
   if (/^https?:/i.test(String(url))) shell.openExternal(String(url))
 })

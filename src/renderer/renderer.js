@@ -16,6 +16,9 @@ const btnLog = document.getElementById('btn-log')
 const btnData = document.getElementById('btn-data')
 const btnBrowser = document.getElementById('btn-browser')
 const btnQuit = document.getElementById('btn-quit')
+const btnUpdate = document.getElementById('btn-update')
+const btnExportPresets = document.getElementById('btn-export-presets')
+const btnImportPresets = document.getElementById('btn-import-presets')
 
 const STATUS_LABEL = {
   idle: '正在初始化…',
@@ -66,6 +69,8 @@ async function init() {
   }
   const tail = await api.getLogTail()
   for (const line of tail) appendLog(line)
+  const update = await api.getUpdateState()
+  if (update) applyUpdateState(update)
 }
 
 api.onState(setStatus)
@@ -90,5 +95,40 @@ btnBrowser.addEventListener('click', () => {
 })
 
 btnQuit.addEventListener('click', () => api.quit())
+let updatePhase = 'idle'
+function applyUpdateState(update) {
+  updatePhase = update.phase || 'idle'
+  if (update.phase === 'downloaded') {
+    btnUpdate.textContent = '重启并安装 ' + update.version
+    btnUpdate.disabled = false
+  } else if (update.message) {
+    btnUpdate.textContent = update.message
+  } else if (update.phase === 'checking' || update.phase === 'downloading') {
+    btnUpdate.textContent = '正在检查更新…'
+    btnUpdate.disabled = true
+  } else if (update.phase === 'unsupported') {
+    btnUpdate.textContent = '仅安装版支持自动更新'
+    btnUpdate.disabled = true
+  }
+}
+btnUpdate.addEventListener('click', () => {
+  if (updatePhase === 'downloaded') return api.installUpdate()
+  return api.checkUpdate()
+})
+api.onUpdate(applyUpdateState)
+
+btnExportPresets.addEventListener('click', async () => {
+  const result = await api.exportPresets()
+  if (result && result.message) appendLog('[预设] ' + result.message)
+})
+
+btnImportPresets.addEventListener('click', async () => {
+  const result = await api.importPresets()
+  if (result && result.message) appendLog('[预设] ' + result.message)
+})
+
+api.onPresetsMessage((message) => {
+  if (message) appendLog('[预设] ' + message)
+})
 
 init()
