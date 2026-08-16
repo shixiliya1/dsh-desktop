@@ -89,6 +89,11 @@ class HarnessManager {
     if (override && override.trim()) {
       return override.replace(/__PORT__/g, String(port))
     }
+    const entry = this.runtimeEntry()
+    return `"${process.execPath}" "${entry}" --profile web --port ${port}`
+  }
+
+  runtimeEntry() {
     const entry = path.join(
       __dirname,
       '..',
@@ -102,10 +107,11 @@ class HarnessManager {
     if (!fs.existsSync(entry)) {
       throw new Error('固定的 DeepSeek Harness 运行时缺失，请重新安装 DSH Desktop。')
     }
-    return `"${process.execPath}" "${entry}" --profile web --port ${port}`
+    return entry
   }
 
   spawnChild(port) {
+    const override = process.env.DSH_DESKTOP_DSH_CMD && process.env.DSH_DESKTOP_DSH_CMD.trim()
     const commandLine = this.commandLine(port)
     const env = {
       ...process.env,
@@ -115,8 +121,8 @@ class HarnessManager {
     }
     this.logLine(`[dsh-desktop] launching: ${commandLine}`)
     this.logLine(`[dsh-desktop] DSH_HOME=${this.dshHome}`)
-    const child =
-      process.platform === 'win32'
+    const child = override
+      ? process.platform === 'win32'
         ? spawn('cmd.exe', ['/d', '/s', '/c', commandLine], {
             env,
             windowsHide: true,
@@ -126,6 +132,11 @@ class HarnessManager {
             env,
             stdio: ['ignore', 'pipe', 'pipe']
           })
+      : spawn(process.execPath, ['--expose-internals', this.runtimeEntry(), '--profile', 'web', '--port', String(port)], {
+          env: { ...env, ELECTRON_RUN_AS_NODE: '1' },
+          windowsHide: process.platform === 'win32',
+          stdio: ['ignore', 'pipe', 'pipe']
+        })
     child.stdout.on('data', (chunk) => this.logLine(chunk.toString()))
     child.stderr.on('data', (chunk) => this.logLine(chunk.toString()))
     child.on('error', (error) => {
