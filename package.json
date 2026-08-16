@@ -17,7 +17,7 @@
     "postinstall": "node scripts/generate-icon.js",
     "dist": "node scripts/generate-icon.js && electron-builder",
     "dist:dir": "node scripts/generate-icon.js && electron-builder --dir",
-    "dist:win": "node scripts/generate-icon.js && electron-builder --win",
+    "dist:win": "node scripts/generate-icon.js && electron-builder --win --publish never",
     "dist:mac": "node scripts/generate-icon.js && electron-builder --mac"
   },
   "dependencies": {
